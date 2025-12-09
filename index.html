@@ -2,65 +2,64 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Guitar Transient Demo</title>
+  <title>Transient Demo</title>
   <script src="https://unpkg.com/tone@latest/build/Tone.js"></script>
 </head>
 <body>
   <button id="play">Play Transient</button>
+  <button id="mute">Mute</button>
+  <input id="vol" type="range" min="-40" max="0" value="-10" />
 
   <script>
-    // === CLICK (very short noise burst) ===
+    // MASTER VOLUME + MUTE
+    const master = new Tone.Volume(-10).toDestination();
+    Tone.Destination.mute = false;
+
+    document.getElementById("mute").onclick = () => {
+      Tone.Destination.mute = !Tone.Destination.mute;
+    };
+
+    document.getElementById("vol").oninput = (e) => {
+      master.volume.value = e.target.value;
+    };
+
+    // === CLICK (very short burst) ===
     const clickNoise = new Tone.Noise("white");
-    const clickFilter = new Tone.Filter({
-      type: "highpass",
-      frequency: 4000
-    });
+    const clickFilter = new Tone.Filter({ type: "highpass", frequency: 4000 });
     const clickEnv = new Tone.AmplitudeEnvelope({
-      attack: 0.0001,
-      decay: 0.002,
-      sustain: 0,
-      release: 0.001
+      attack: 0.0001, decay: 0.002, sustain: 0, release: 0.001
     });
 
     clickNoise.connect(clickFilter);
     clickFilter.connect(clickEnv);
-    clickEnv.toDestination();
+    clickEnv.connect(master);
 
-
-    // === SCRAPE (longer filtered noise) ===
+    // === SCRAPE (longer burst) ===
     const scrapeNoise = new Tone.Noise("white");
-    const scrapeFilter = new Tone.Filter({
-      type: "highpass",
-      frequency: 2000
-    });
+    const scrapeFilter = new Tone.Filter({ type: "highpass", frequency: 2000 });
     const scrapeEnv = new Tone.AmplitudeEnvelope({
-      attack: 0.0001,
-      decay: 0.03,
-      sustain: 0,
-      release: 0.005
+      attack: 0.0001, decay: 0.03, sustain: 0, release: 0.005
     });
 
     scrapeNoise.connect(scrapeFilter);
     scrapeFilter.connect(scrapeEnv);
-    scrapeEnv.toDestination();
-
+    scrapeEnv.connect(master);
 
     // === TRIGGER ===
-    document.getElementById("play").addEventListener("click", async () => {
+    document.getElementById("play").onclick = async () => {
       await Tone.start();
-
       const now = Tone.now();
 
       // CLICK
       clickNoise.start(now);
       clickEnv.triggerAttack(now);
-      clickNoise.stop(now + 0.01); // 10ms
+      clickNoise.stop(now + 0.01);
 
       // SCRAPE
       scrapeNoise.start(now);
       scrapeEnv.triggerAttack(now);
-      scrapeNoise.stop(now + 0.05); // 50ms
-    });
+      scrapeNoise.stop(now + 0.05);
+    };
   </script>
 </body>
 </html>
