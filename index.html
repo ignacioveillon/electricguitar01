@@ -3,48 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <title>Guitar Transient Demo</title>
-  <script src="https://unpkg.com/tone@next/build/Tone.js"></script>
+  <script src="https://unpkg.com/tone@latest/build/Tone.js"></script>
 </head>
 <body>
   <button id="play">Play Transient</button>
 
   <script>
-    // === CLICK (Tone.Impulse) ===
-    const click = new Tone.Impulse(1);
+    // === CLICK (very short noise burst) ===
+    const clickNoise = new Tone.Noise("white");
+    const clickFilter = new Tone.Filter({
+      type: "highpass",
+      frequency: 4000
+    });
     const clickEnv = new Tone.AmplitudeEnvelope({
       attack: 0.0001,
-      decay: 0.003,
+      decay: 0.002,
       sustain: 0,
       release: 0.001
     });
-    click.connect(clickEnv);
 
-    const clickFilter = new Tone.Filter({
+    clickNoise.connect(clickFilter);
+    clickFilter.connect(clickEnv);
+    clickEnv.toDestination();
+
+
+    // === SCRAPE (longer filtered noise) ===
+    const scrapeNoise = new Tone.Noise("white");
+    const scrapeFilter = new Tone.Filter({
       type: "highpass",
-      frequency: 3000,
-      Q: 1
-    }).toDestination();
-
-    clickEnv.connect(clickFilter);
-
-
-    // === SCRAPE (Tone.Noise) ===
-    const noise = new Tone.Noise("white");
-    const noiseFilter = new Tone.Filter({
-      type: "highpass",
-      frequency: 2000,
-      Q: 0.5
+      frequency: 2000
     });
-    const noiseEnv = new Tone.AmplitudeEnvelope({
+    const scrapeEnv = new Tone.AmplitudeEnvelope({
       attack: 0.0001,
-      decay: 0.02,
+      decay: 0.03,
       sustain: 0,
       release: 0.005
     });
 
-    noise.connect(noiseFilter);
-    noiseFilter.connect(noiseEnv);
-    noiseEnv.toDestination();
+    scrapeNoise.connect(scrapeFilter);
+    scrapeFilter.connect(scrapeEnv);
+    scrapeEnv.toDestination();
 
 
     // === TRIGGER ===
@@ -53,10 +51,15 @@
 
       const now = Tone.now();
 
+      // CLICK
+      clickNoise.start(now);
       clickEnv.triggerAttack(now);
-      noise.start(now);
-      noiseEnv.triggerAttack(now);
-      noise.stop(now + 0.05); // stop after burst
+      clickNoise.stop(now + 0.01); // 10ms
+
+      // SCRAPE
+      scrapeNoise.start(now);
+      scrapeEnv.triggerAttack(now);
+      scrapeNoise.stop(now + 0.05); // 50ms
     });
   </script>
 </body>
