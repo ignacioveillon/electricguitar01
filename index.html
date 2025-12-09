@@ -2,7 +2,6 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Electric Guitar Transient – 3 Components</title>
   <script src="https://unpkg.com/tone@latest/build/Tone.js"></script>
 </head>
 <body>
@@ -10,59 +9,27 @@
   <button id="play">Play Transient</button>
   <br><br>
 
-  <!-- CLICK controls -->
-  <h3>Click</h3>
-  <button id="muteClick">Mute Click</button>
-  <input id="volClick" type="range" min="-40" max="0" value="-10" />
-  <br><br>
-
-  <!-- SCRAPE controls -->
-  <h3>Scrape</h3>
-  <button id="muteScrape">Mute Scrape</button>
-  <input id="volScrape" type="range" min="-40" max="0" value="-10" />
-  <br><br>
-
-  <!-- PITCH INSTABILITY controls -->
+  <!-- PITCH INSTABILITY CONTROLS -->
   <h3>Pitch Instability</h3>
   <button id="mutePitch">Mute Pitch</button>
   <input id="volPitch" type="range" min="-40" max="0" value="-10" />
+
   <br><br>
 
+  <!-- === FREQUENCY ENVELOPE SLIDERS === -->
+  Attack <input id="feAttack" type="range" min="0" max="0.01" step="0.0001" value="0.001"><br>
+  Decay <input id="feDecay" type="range" min="0" max="0.2" step="0.001" value="0.03"><br>
+  Release <input id="feRelease" type="range" min="0" max="0.1" step="0.001" value="0.01"><br>
+  BaseFreq <input id="feBase" type="range" min="40" max="500" step="1" value="110"><br>
+  Octaves <input id="feOct" type="range" min="0" max="1" step="0.01" value="0.1"><br>
+
   <script>
-    /* ---------------------------------------------------------
-       CLICK (short burst of bright noise)
-    --------------------------------------------------------- */
-    const clickNoise = new Tone.Noise("white");
-    const clickFilter = new Tone.Filter({ type: "highpass", frequency: 4000 });
-    const clickEnv = new Tone.AmplitudeEnvelope({
-      attack: 0.0001, decay: 0.002, sustain: 0, release: 0.001
-    });
-    const clickVol = new Tone.Volume(-10).toDestination();
-
-    clickNoise.connect(clickFilter);
-    clickFilter.connect(clickEnv);
-    clickEnv.connect(clickVol);
-
-    /* ---------------------------------------------------------
-       SCRAPE (longer noise burst)
-    --------------------------------------------------------- */
-    const scrapeNoise = new Tone.Noise("white");
-    const scrapeFilter = new Tone.Filter({ type: "highpass", frequency: 2000 });
-    const scrapeEnv = new Tone.AmplitudeEnvelope({
-      attack: 0.0001, decay: 0.03, sustain: 0, release: 0.005
-    });
-    const scrapeVol = new Tone.Volume(-10).toDestination();
-
-    scrapeNoise.connect(scrapeFilter);
-    scrapeFilter.connect(scrapeEnv);
-    scrapeEnv.connect(scrapeVol);
-
-    /* ---------------------------------------------------------
-       PITCH INSTABILITY (triangle oscillator + pitch envelope)
-    --------------------------------------------------------- */
+    /* -------------------------
+       PITCH INSTABILITY NODES
+    ------------------------- */
     const pitchOsc = new Tone.Oscillator({
       type: "triangle",
-      frequency: 110 // A2 as base example
+      frequency: 110
     });
 
     const pitchEnv = new Tone.FrequencyEnvelope({
@@ -71,62 +38,57 @@
       sustain: 0,
       release: 0.01,
       baseFrequency: 110,
-      octaves: 0.1 // quick slight upward pitch jump
+      octaves: 0.1
     });
 
     pitchEnv.connect(pitchOsc.frequency);
-
     const pitchVol = new Tone.Volume(-10).toDestination();
     pitchOsc.connect(pitchVol);
 
-    /* ---------------------------------------------------------
-       MUTE buttons
-    --------------------------------------------------------- */
-    document.getElementById("muteClick").onclick = () => {
-      clickVol.mute = !clickVol.mute;
-    };
-    document.getElementById("muteScrape").onclick = () => {
-      scrapeVol.mute = !scrapeVol.mute;
-    };
+    // Mute + Volume
     document.getElementById("mutePitch").onclick = () => {
       pitchVol.mute = !pitchVol.mute;
-    };
-
-    /* ---------------------------------------------------------
-       VOLUME sliders
-    --------------------------------------------------------- */
-    document.getElementById("volClick").oninput = e => {
-      clickVol.volume.value = e.target.value;
-    };
-    document.getElementById("volScrape").oninput = e => {
-      scrapeVol.volume.value = e.target.value;
     };
     document.getElementById("volPitch").oninput = e => {
       pitchVol.volume.value = e.target.value;
     };
 
-    /* ---------------------------------------------------------
-       TRIGGER PLAY
-    --------------------------------------------------------- */
+    /* -------------------------
+       FREQUENCY ENVELOPE SLIDERS
+    ------------------------- */
+
+    document.getElementById("feAttack").oninput = e => {
+      pitchEnv.attack = parseFloat(e.target.value);
+    };
+
+    document.getElementById("feDecay").oninput = e => {
+      pitchEnv.decay = parseFloat(e.target.value);
+    };
+
+    document.getElementById("feRelease").oninput = e => {
+      pitchEnv.release = parseFloat(e.target.value);
+    };
+
+    document.getElementById("feBase").oninput = e => {
+      pitchEnv.baseFrequency = parseFloat(e.target.value);
+    };
+
+    document.getElementById("feOct").oninput = e => {
+      pitchEnv.octaves = parseFloat(e.target.value);
+    };
+
+    /* -------------------------
+       TRIGGER
+    ------------------------- */
     document.getElementById("play").onclick = async () => {
       await Tone.start();
       const now = Tone.now();
 
-      // CLICK
-      clickNoise.start(now);
-      clickEnv.triggerAttack(now);
-      clickNoise.stop(now + 0.01);
-
-      // SCRAPE
-      scrapeNoise.start(now);
-      scrapeEnv.triggerAttack(now);
-      scrapeNoise.stop(now + 0.05);
-
-      // PITCH OSC
       pitchOsc.start(now);
       pitchEnv.triggerAttack(now);
       pitchOsc.stop(now + 0.08);
     };
   </script>
+
 </body>
 </html>
