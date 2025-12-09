@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Guitar Transient Demo</title>
+  <script src="https://unpkg.com/tone@next/build/Tone.js"></script>
+</head>
+<body>
+  <button id="play">Play Transient</button>
+
+  <script>
+    // === CLICK (Tone.Impulse) ===
+    const click = new Tone.Impulse(1);
+    const clickEnv = new Tone.AmplitudeEnvelope({
+      attack: 0.0001,
+      decay: 0.003,
+      sustain: 0,
+      release: 0.001
+    });
+    click.connect(clickEnv);
+
+    const clickFilter = new Tone.Filter({
+      type: "highpass",
+      frequency: 3000,
+      Q: 1
+    }).toDestination();
+
+    clickEnv.connect(clickFilter);
+
+
+    // === SCRAPE (Tone.Noise) ===
+    const noise = new Tone.Noise("white");
+    const noiseFilter = new Tone.Filter({
+      type: "highpass",
+      frequency: 2000,
+      Q: 0.5
+    });
+    const noiseEnv = new Tone.AmplitudeEnvelope({
+      attack: 0.0001,
+      decay: 0.02,
+      sustain: 0,
+      release: 0.005
+    });
+
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseEnv);
+    noiseEnv.toDestination();
+
+
+    // === TRIGGER ===
+    document.getElementById("play").addEventListener("click", async () => {
+      await Tone.start();
+
+      const now = Tone.now();
+
+      clickEnv.triggerAttack(now);
+      noise.start(now);
+      noiseEnv.triggerAttack(now);
+      noise.stop(now + 0.05); // stop after burst
+    });
+  </script>
+</body>
+</html>
