@@ -9,24 +9,41 @@
   <button id="play">Play Transient</button>
   <br><br>
 
-  <!-- PITCH INSTABILITY CONTROLS -->
+  <!-- PITCH INSTABILITY -->
   <h3>Pitch Instability</h3>
   <button id="mutePitch">Mute Pitch</button>
   <input id="volPitch" type="range" min="-40" max="0" value="-10" />
-
   <br><br>
 
-  <!-- === FREQUENCY ENVELOPE SLIDERS === -->
-  Attack <input id="feAttack" type="range" min="0" max="0.01" step="0.0001" value="0.001"><br>
-  Decay <input id="feDecay" type="range" min="0" max="0.2" step="0.001" value="0.03"><br>
-  Release <input id="feRelease" type="range" min="0" max="0.1" step="0.001" value="0.01"><br>
-  BaseFreq <input id="feBase" type="range" min="40" max="500" step="1" value="110"><br>
-  Octaves <input id="feOct" type="range" min="0" max="1" step="0.01" value="0.1"><br>
+  <!-- === FREQUENCY ENVELOPE SLIDERS + READOUTS === -->
+  Attack 
+  <input id="feAttack" type="range" min="0.001" max="0.5" step="0.001" value="0.001">
+  <span id="valAttack">0.001</span><br>
+
+  Decay 
+  <input id="feDecay" type="range" min="0.01" max="0.5" step="0.001" value="0.03">
+  <span id="valDecay">0.03</span><br>
+
+  Sustain 
+  <input id="feSustain" type="range" min="0.0" max="0.5" step="0.001" value="0.0">
+  <span id="valSustain">0.0</span><br>
+
+  Release 
+  <input id="feRelease" type="range" min="0.00" max="0.5" step="0.001" value="0.01">
+  <span id="valRelease">0.01</span><br>
+
+  BaseFreq 
+  <input id="feBase" type="range" min="110" max="220" step="1" value="110">
+  <span id="valBase">110</span><br>
+
+  Octaves 
+  <input id="feOct" type="range" min="0.0" max="1.0" step="0.01" value="0.1">
+  <span id="valOct">0.1</span><br><br>
 
   <script>
-    /* -------------------------
+    /* ---------------------------------------
        PITCH INSTABILITY NODES
-    ------------------------- */
+    --------------------------------------- */
     const pitchOsc = new Tone.Oscillator({
       type: "triangle",
       frequency: 110
@@ -45,7 +62,9 @@
     const pitchVol = new Tone.Volume(-10).toDestination();
     pitchOsc.connect(pitchVol);
 
-    // Mute + Volume
+    /* ---------------------------------------
+       MUTE + VOLUME
+    --------------------------------------- */
     document.getElementById("mutePitch").onclick = () => {
       pitchVol.mute = !pitchVol.mute;
     };
@@ -53,40 +72,35 @@
       pitchVol.volume.value = e.target.value;
     };
 
-    /* -------------------------
-       FREQUENCY ENVELOPE SLIDERS
-    ------------------------- */
+    /* ---------------------------------------
+       REAL-TIME SLIDER UPDATES + READOUTS
+    --------------------------------------- */
+    function bindSlider(id, param, readoutId, parser = parseFloat) {
+      const slider = document.getElementById(id);
+      const label = document.getElementById(readoutId);
+      slider.oninput = e => {
+        const v = parser(e.target.value);
+        pitchEnv[param] = v;
+        label.textContent = v;
+      };
+    }
 
-    document.getElementById("feAttack").oninput = e => {
-      pitchEnv.attack = parseFloat(e.target.value);
-    };
+    bindSlider("feAttack", "attack", "valAttack");
+    bindSlider("feDecay", "decay", "valDecay");
+    bindSlider("feSustain", "sustain", "valSustain");
+    bindSlider("feRelease", "release", "valRelease");
+    bindSlider("feBase", "baseFrequency", "valBase", parseFloat);
+    bindSlider("feOct", "octaves", "valOct");
 
-    document.getElementById("feDecay").oninput = e => {
-      pitchEnv.decay = parseFloat(e.target.value);
-    };
-
-    document.getElementById("feRelease").oninput = e => {
-      pitchEnv.release = parseFloat(e.target.value);
-    };
-
-    document.getElementById("feBase").oninput = e => {
-      pitchEnv.baseFrequency = parseFloat(e.target.value);
-    };
-
-    document.getElementById("feOct").oninput = e => {
-      pitchEnv.octaves = parseFloat(e.target.value);
-    };
-
-    /* -------------------------
+    /* ---------------------------------------
        TRIGGER
-    ------------------------- */
+    --------------------------------------- */
     document.getElementById("play").onclick = async () => {
       await Tone.start();
       const now = Tone.now();
-
       pitchOsc.start(now);
       pitchEnv.triggerAttack(now);
-      pitchOsc.stop(now + 0.08);
+      pitchOsc.stop(now + 0.2);
     };
   </script>
 
